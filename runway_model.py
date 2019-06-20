@@ -49,8 +49,6 @@ from PIL import Image
 
 @runway.setup(options={'models': runway.file(extension='.zip')})
 def setup(opts):
-    msg = '[SETUP] Ran with options: seed = {}, truncation = {}'
-    print(msg.format(opts['seed'], opts['truncation']))
     model = Paint_MODEL(opts)
     return model
 

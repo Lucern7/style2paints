@@ -26,16 +26,18 @@ import numpy as np
 from keras.models import load_model
 from tricks import *
 import zipfile
-
+import os
 
 class Paint_MODEL():
     def __init__(self, opts):
         self.session = keras.backend.get_session()
         device_A = '/gpu:0'
         device_B = '/gpu:0'
-        print('extracting ', opts['models'])
-        with zipfile.ZipFile(opts['models'],"r") as zip_ref:
-            zip_ref.extractall(".")
+        
+        if not os.path.isdir('weights'):
+            print('extract weights files !!')
+            with zipfile.ZipFile(opts['models'],"r") as zip_ref:
+                zip_ref.extractall(".")
 
         with tf.device(device_A):
 
