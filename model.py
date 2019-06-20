@@ -98,7 +98,7 @@ class Paint_MODEL():
 
     
     def paint(self, sketch, points = [], reference = None, alpha = 0.5):
-        sketch = self.ToGray(np.array(sketch))
+        sketch = np.array(sketch)[:,:,0]
         sketch_1024 = k_resize(sketch, 64)
 
         sketch_256 = mini_norm(k_resize(min_k_down(sketch_1024, 2), 16))
