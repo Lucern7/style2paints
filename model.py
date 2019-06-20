@@ -25,6 +25,7 @@ import keras
 import numpy as np
 from keras.models import load_model
 from tricks import *
+import zipfile
 
 
 class Paint_MODEL():
@@ -32,6 +33,9 @@ class Paint_MODEL():
         self.session = keras.backend.get_session()
         device_A = '/gpu:0'
         device_B = '/gpu:0'
+        print('extracting ', opts['models'])
+        with zipfile.ZipFile(opts['models'],"r") as zip_ref:
+            zip_ref.extractall(".")
 
         with tf.device(device_A):
 
@@ -41,21 +45,21 @@ class Paint_MODEL():
             self.ip4 = tf.placeholder(dtype=tf.float32, shape=(None, None, None, 4))
             self.ip3x = tf.placeholder(dtype=tf.float32, shape=(None, None, None, 3))
 
-            baby = load_model(opts['baby'])
+            baby = load_model('weights/baby.net')
             baby_place = tf.concat([- 512 * tf.ones_like(self.ip4[:, :, :, 3:4]), 128 * tf.ones_like(self.ip4[:, :, :, 3:4]), 128 * tf.ones_like(self.ip4[:, :, :, 3:4])], axis=3)
             baby_yuv = self.RGB2YUV(self.ip4[:, :, :, 0:3])
             baby_alpha = tf.where(x=tf.zeros_like(self.ip4[:, :, :, 3:4]), y=tf.ones_like(self.ip4[:, :, :, 3:4]), condition=tf.less(self.ip4[:, :, :, 3:4], 128))
             baby_hint = baby_alpha * baby_yuv + (1 - baby_alpha) * baby_place
             self.baby_op = self.YUV2RGB(baby(tf.concat([self.ip1, baby_hint], axis=3)))
 
-            girder = load_model(opts['girder'])
+            girder = load_model('weights/girder.net')
             self.gird_op = (1 - girder([1 - self.ip1 / 255.0, self.ip4, 1 - self.ip3 / 255.0])) * 255.0
 
-            reader = load_model(opts['reader'])
+            reader = load_model('weights/reader.net')
             features = reader(self.ip3 / 255.0)
             featuresx = reader(self.ip3x / 255.0)
 
-            head = load_model(opts['head'])
+            head = load_model('weights/head.net')
             feed = [1 - self.ip1 / 255.0, (self.ip4[:, :, :, 0:3] / 127.5 - 1) * self.ip4[:, :, :, 3:4] / 255.0]
             for _ in range(len(features)):
                 item = keras.backend.mean(features[_], axis=[1, 2])
@@ -63,7 +67,7 @@ class Paint_MODEL():
                 feed.append(item * self.ipa + itemx * (1 - self.ipa))
             _, _, head_temp = head(feed)
 
-            neck = load_model(opts['neck'])
+            neck = load_model('weights/neck.net')
             _, _, neck_temp = neck(feed)
             feed[0] = tf.clip_by_value(1 - tf.image.resize_bilinear(self.ToGray(self.VGG2RGB(head_temp) / 255.0), tf.shape(self.ip1)[1:3]), 0.0, 1.0)
             _, _, head_temp = neck(feed)
@@ -75,7 +79,7 @@ class Paint_MODEL():
 
             self.ip3B = tf.placeholder(dtype=tf.float32, shape=(None, None, None, 3))
 
-            tail = load_model(opts['tail'])
+            tail = load_model('weights/tail.net')
             pads = 7
             self.tail_op = tail(tf.pad(self.ip3B / 255.0, [[0, 0], [pads, pads], [pads, pads], [0, 0]], 'REFLECT'))[:, pads*2:-pads*2, pads*2:-pads*2, :] * 255.0
 
@@ -83,12 +87,12 @@ class Paint_MODEL():
         self.session.run(tf.global_variables_initializer())
 
 
-        tail.load_weights(opts['tail'])
-        baby.load_weights(opts['baby'])
-        head.load_weights(opts['head'])
-        neck.load_weights(opts['neck'])
-        girder.load_weights(opts['girder'])
-        reader.load_weights(opts['reader'])
+        tail.load_weights('weights/tail.net')
+        baby.load_weights('weights/baby.net')
+        head.load_weights('weights/head.net')
+        neck.load_weights('weights/neck.net')
+        girder.load_weights('weights/girder.net')
+        reader.load_weights('weights/reader.net')
 
     
     def paint(self, sketch, points = [], reference = None, alpha = 0.5):

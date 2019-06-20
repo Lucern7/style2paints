@@ -46,15 +46,8 @@ from PIL import Image
 # Check https://docs.runwayapp.ai/#/python-sdk to see a complete list of
 # supported configs. The setup function should return the model ready to be
 # used.
-setup_options = {
-    'baby': runway.file(extension='.net'),
-    'head': runway.file(extension='.net'),
-    'reader': runway.file(extension='.net'),
-    'neck': runway.file(extension='.net'),
-    'tail': runway.file(extension='.net'),
-    'girder': runway.file(extension='.net'),
-}
-@runway.setup(options=setup_options)
+
+@runway.setup(options={'models': runway.file(extension='.zip')})
 def setup(opts):
     msg = '[SETUP] Ran with options: seed = {}, truncation = {}'
     print(msg.format(opts['seed'], opts['truncation']))
