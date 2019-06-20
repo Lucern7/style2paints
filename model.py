@@ -98,7 +98,7 @@ class Paint_MODEL():
 
     
     def paint(self, sketch, points = [], reference = None, alpha = 0.5):
-        sketch = np.array(sketch)[:,:,0]
+        sketch = self.ToGray(np.array(sketch))
         sketch_1024 = k_resize(sketch, 64)
 
         sketch_256 = mini_norm(k_resize(min_k_down(sketch_1024, 2), 16))
@@ -128,7 +128,7 @@ class Paint_MODEL():
             alpha=(1 - alpha) if reference is not None else 1
         )
         result = self.go_tail(result)
-        return result
+        return result[:,:,::-1]
     
     def ToGray(self, x):
         R = x[:, :, :, 0:1]
